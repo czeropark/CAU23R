@@ -46,3 +46,13 @@
 
 ---
 
+### <b>&#129002; R markdown </b>
+
+Instead of .r file, use <b>R notebook</b> or <b>R markdown</b> showing your code and output together
+
+~~~
+```{r}
+type your r code here, surrounded by ```{r} and ```
+```
+~~~
+
