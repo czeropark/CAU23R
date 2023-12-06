@@ -1,4 +1,4 @@
-## Final Exam Project (individual)
+## Final Exam Project
 
 ### <b>&#129002; Rule </b>
 * Due: Dec.21(Thu)
