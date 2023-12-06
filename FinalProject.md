@@ -1,10 +1,9 @@
-## Final Exam Team Project
+## Final Exam Project (individual)
 
 ### <b>&#129002; Rule </b>
-
-* 2-3 people per group
-* work on GitHub
 * Due: Dec.21(Thu)
+* file format: html
+* submission: e-class 
 ---
 
 ### <b>&#129002; Structure</b>
