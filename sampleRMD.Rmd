@@ -1,0 +1,302 @@
+---
+title: "W11 Data Manipulation and Visualization 3"
+author: "Seayoung Park"
+date: "2023-11-15"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+<hr style="border:2px solid #AF56CB;">
+
+### &#129002; Today's data: 인천국제공항공사_항공사별 노선별 운송실적
+
+
+https://www.data.go.kr/data/15062056/fileData.do
+
+https://www.data.go.kr/en/data/15062056/fileData.do
+
+airport code and coordinates data: https://github.com/jpatokal/openflights/tree/master/data
+
+---
+
+```{r include=FALSE}
+path<-"/Users/samantha/Downloads/노선별+항공사별+운송실적/노선별 항공사별 항공운송실적(2019년 전체).csv"
+```
+
+```{r}
+flight2019_raw <- read.csv(path, fileEncoding = "cp949")
+airport <- read.csv("https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat", header = F, stringsAsFactor = F)
+
+head(flight2019_raw)
+head(airport)
+
+airport <- airport[airport$V5!='', c('V3', 'V4', 'V5','V7','V8')]
+names(airport) <- c("City", "Country", "IATA", "latitude", "longitude")
+```
+
+
+Let's choose 국제, 여객 flights in August and drop out some columns.
+```{r}
+library(dplyr)
+
+flight2019_raw<- flight2019_raw %>% 
+  filter(국제_국내=="국제", 여객_화물=="여객", 년월=="2019-08") %>% 
+  select(!c(무임승객.명.,환승객.명.,항공화물.kg.,환적화물.kg.,우편물.kg.))
+```
+
+
+To mark the location of airports, we need coordinates in `airport` data.
+
+`xxx_join(x, y, by=join_by(key))` : Add columns from `y` to `x`, matching observations based on the `key`s
+
+
+![https://rpubs.com/williamsurles/293454](https://statisticsglobe.com/wp-content/uploads/2019/04/dplyr-data-join-functions-overview_inner_join-left_join-right_join-full_join-semi_join-anti_join.png)
+```{r}
+flight2019_code<- flight2019_raw %>% left_join(select(airport,IATA, longitude, latitude), by = join_by(경유지공항== IATA))
+is.na(flight2019_code)%>%table()
+flight2019_code%>%filter(!complete.cases(flight2019_code))
+```
+
+
+Missing values are in coordinates columns only. Should we remove them?
+
+/
+
+---
+
+##### We can fill the blanks!
+
+List up the airports without coordinates and let's google them.
+
+```{r}
+missingIATAlist<-flight2019_code%>%filter(!complete.cases(flight2019_code))%>%select(경유지공항)%>%unique
+```
+
+```{r include=FALSE}
+missingIATA_latlon <- matrix(c(34.79526814666087, 138.1795625896582,
+                               21.120306080552012, 107.41607779603649,
+                               32.07083327396672, 120.97555559640013), 
+                             ncol=2, byrow=T)
+```
+
+How do we put the coordinates?
+
+```{r}
+missingIATA_latlon 
+
+missingIATA<- cbind(missingIATAlist, missingIATA_latlon) 
+colnames(missingIATA)<- c("code", "lat", "lon")
+
+
+for (i in 1:nrow(missingIATA)) {
+  code <- missingIATA$code[i]
+  lat <- missingIATA$lat[i]
+  lon <- missingIATA$lon[i]
+  flight2019_code$latitude[flight2019_code$경유지공항==code]<- lat
+  flight2019_code$longitude[flight2019_code$경유지공항==code]<- lon
+}
+
+is.na(flight2019_code)%>%table
+```
+
+
+
+<hr style="border:1px solid #AF56CB;">
+
+#### <font color=Violet>&#10074;</font> Mark on a map
+
+
+Let's split the data into arrivals and departures for comparison.
+
+```{r}
+library(ggplot2)
+
+flight2019arr<- flight2019_code%>%filter(도착_출발=="도착")
+flight2019dep<- flight2019_code%>%filter(도착_출발=="출발")
+```
+
+
+Again, when making a chart using `ggplot`, we stack layers.
+
+As a canvas, we create a empty world map and declare as `p`.
+
+```{r}
+mymap <- map_data("world")
+p<- ggplot(mymap, aes(x=long, y=lat)) + 
+  geom_map(data = mymap, map = mymap, aes(map_id=region), col = "gray", fill = "white")
+```
+
+---
+
+Marker size based on the number of passengers.
+
+```{r}
+p_point <- p + 
+  flight2019arr%>% geom_point(mapping=aes(x=longitude, y=latitude, size=유임승객.명.),
+                              colour = 'blue',alpha=0.1) +
+  labs(title="2019년 8월 인천공항 도착 항공편 출발지별 항공사별 탑승객 수", size="인원 (명)")
+
+p_point
+```
+
+Wait, Korean letters are not displayed on the graph. If that's the case, try below. (if you are using macOS? then 99.9%)
+```{r message=FALSE, warning=FALSE}
+#install.packages("extrafont")
+library(extrafont)
+font_import(pattern="AppleGothic") # or any font you have on your OS. Like install packages, it is required only for the first time.
+theme_set(theme_grey(base_family="AppleGothic"))
+```
+
+Now try to print out the map again. 
+
+```{r}
+p_point
+```
+
+Solved :)
+
+---
+
+<hr style="border:1px solid #AF56CB;">
+
+
+Okay, then let's compare the two major Korean airlines with graphs. 
+
+How would you do that?
+
+
+```{r}
+flight2019arr$항공사명%>%table()%>%sort(decreasing = T)
+
+flight2019arr_KE<- flight2019arr %>% filter(항공사명=="대한항공")
+flight2019arr_AA<- flight2019arr %>% filter(항공사명=="아시아나항공")
+```
+
+
+Let's compare from different point. Read the data of year 2020 and cleanse it through the same process.
+
+
+```{r include=FALSE}
+path2 = "/Users/samantha/Downloads/노선별+항공사별+운송실적/노선별 항공사별 항공운송실적(2020년 전체).csv"
+```
+
+
+When you repeat the same process for different data, be aware of what point you need to make a change in accordance with the new data. 
+
+```{r}
+flight2020_raw<- read.csv(path2, fileEncoding = "cp949")
+flight2020_raw<- flight2020_raw%>%
+  filter(국제_국내=="국제", 여객_화물=="여객", 년월=="2020-08") %>%
+  select(!c(무임승객.명.,환승객.명.,항공화물.kg.,환적화물.kg.,우편물.kg.))
+
+flight2020_code<- flight2020_raw %>% left_join(select(airport,IATA, longitude, latitude), by = c("경유지공항"= "IATA"))
+missingIATAlist<-flight2020_code%>%filter(!complete.cases(flight2020_code))%>%select(경유지공항)%>%unique
+```
+
+For 2020, there's only one airport missing the coordinates. And fortunately, it was already included in 2019 also. We are reuse the data then. 
+
+```{r}
+flight2020_code$longitude[flight2020_code$경유지공항=="VDO"]<- missingIATA$lon[missingIATA$code=="VDO"]
+flight2020_code$latitude[flight2020_code$경유지공항=="VDO"]<- missingIATA$lat[missingIATA$code=="VDO"]
+
+is.na(flight2020_code)%>%table
+
+flight2020arr<- flight2020_code%>%filter(도착_출발=="도착")
+flight2020dep<- flight2020_code%>%filter(도착_출발=="출발")
+```
+
+
+---
+
+
+Marker size based on the number of passengers in 2020.
+
+```{r}
+p_point2020<- p+ flight2020arr%>% geom_point(mapping=aes(x=longitude, y=latitude, size=유임승객.명.),
+                                          colour = 'blue',alpha=0.1)+
+  labs(title="2020년 8월 인천공항 도착 항공편 출발지별 항공사별 탑승객 수", size="인원 (명)")
+```
+
+---
+
+Let's put two graphs from different dataframe side by side using `grid.arrange`
+
+```{r}
+#install.packages("gridExtra")
+library(gridExtra)
+grid.arrange(p_point, p_point2020, nrow=2)
+```
+
+
+##### What can you tell? Any sggestion for improvement?
+
+---
+
+
+<hr style="border:1px solid #AF56CB;">
+
+
+To apply the same visualization criteria, let's combine two separate dateframes using `rbind()`
+
+```{r}
+flight2yrs<- rbind(flight2019_code, flight2020_code)
+```
+
+
+In one dataframe? `facet_wrap()`
+
+Another way to set facet variables : .~`var name`
+
+```{r}
+p + flight2yrs%>%filter(도착_출발=="도착")%>% geom_point(mapping=aes(x=longitude, y=latitude, size=유임승객.명.),
+                                colour = 'blue',alpha=0.1) +
+  facet_wrap(.~ 년월, nrow=2) +
+  labs(title="2019년 8월, 2020년 8월 인천공항 도착 항공편 출발지별 항공사별 탑승객 수", size="인원 (명)")
+
+```
+
+
+<hr style="border:2px solid #AF56CB;">
+
+### &#129002; Assignment.
+
+##### Create two comparison charts using today's dataset. (other than what we practiced together in class)
+
+Submit your 
+* R code file
+* charts 
+* thoughts on the result in text 
+
+
+Read csv file from 
+* flight data : https://github.com/czeropark/CAU23R/tree/main/W11_data 
+* airport data: https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat
+
+(For flight data, click csv file and then click "raw" button so that you can copy the url like in the page for the airport data)
+
+For example, you will read csv file using <b>url</b> like below, instead of from the path to your local folder.
+
+`read.csv("https://raw.githubusercontent.com/czeropark/CAU23R/main/W11_data/2018_full.csv", fileEncoding="cp949")`
+
+* 2018_full.csv: 노선별 항공사별 항공운송실적(2018년 전체).csv
+* 2019_full.csv: 노선별 항공사별 항공운송실적(2019년 전체).csv
+* 2020_1half.csv: 노선별 항공사별 항공운송실적(2020년 상반기).csv
+* 2020_full.csv: 노선별 항공사별 항공운송실적(2020년 전체).csv
+* 2021_1half.csv: 노선별 항공사별 항공운송실적(2021년 상반기).csv
+* 2021_full.csv: 노선별 항공사별 항공운송실적(2021년 전체).csv
+* 2022_1half.csv:노선별 항공사별 항공운송실적(2022년 상반기).csv
+
+
+
+
+
+##### <b> Due: Nov.28 23:59 </b>
+
+
+<hr style="border:2px solid #AF56CB;">
+
+
+
