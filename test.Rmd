@@ -1,0 +1,49 @@
+---
+title: "project"
+author: "seayoung Park"
+date: "2023-12-06"
+output: html_document
+---
+
+## 주제: 인천공항에서 출/도착별 항공편 특성
+
+겨울방학 여행 계획을 세우며 비행기표를 찾아보다가 인천공항 출도착 항공편들의 특성은 어떤지 궁금해서 이 주제를 골랐다. 
+
+새로운 라인 추가 
+1
+2
+3
+4
+5
+6
+
+
+
+
+
+100
+
+200
+
+## 필요 데이터
+
+* 인천공항 출도착 데이터 출처: http://cau.ac.kr
+* 공항 코드 데이터 출처: http://url.to.the.data
+* 대한민국지도 출처:hhhhhh
+
+
+```{r}
+icn<- read.csv("https://raw.githubusercontent.com/czeropark/CAU23R/main/sizekorea_8th.csv")
+summary(icn)
+head(icn)
+```
+
+사용한 인천공항 항공편 출도착 데이터는 000000 변수들로 구성되어있다. 
+
+
+
+
+![이미지입니다](https://dimg.donga.com/wps/NEWS/IMAGE/2023/10/29/121901437.4.jpeg)
+
+
+

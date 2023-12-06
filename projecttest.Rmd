@@ -1,0 +1,94 @@
+---
+title: "Final Project Example"
+author: "seayoung Park"
+date: "2023-12-06"
+output: html_document
+---
+
+```
+ (linebreak)
+---
+ (linebreak) 
+```
+Three dashes creaste a horizontal line
+
+you need to make a linebreak above and below the dashes. 
+
+
+
+---
+
+
+(Do you see the horizontal line with `---` ?)
+
+---
+
+#### RMD file and HTML file
+
+* rmd file: this file. basically, `text file` using **markdown language**.
+* html file: output of your rmd file. when you `knit`, this text file is compiled and produce a html file. 
+
+In RStudio, if you press `ctrl`+`s` or `command`+ `s`, it saves **rmd** file, the text file your wre writing. 
+If you want to reflect the new changed in your rmd file into html file, you need to `knit`. 
+Think `knit` as a ''save the output file (here, html) and show me the file''.
+
+
+
+---
+
+##### Size of headers
+
+# The biggest
+## Very big
+### Big
+#### Somehow big
+##### Last level
+
+This is the normal sized body text. 
+And This is the second sentence.
+
+This is the normal sized body text. And This is the second sentence.
+
+---
+
+##### bullet point 
+
+* bullet 1
+* bullet 2
+
+- bullet with dash
+- bullet with dash
+  - one level deeper
+  
+##### ordered list
+1. ordered list
+2. ordered list
+2. third item
+
+
+##### emphasize words
+
+
+Let's make **this word** bold
+
+Let's make *this word* italic
+
+Let's make `this word` inline code 
+
+
+
+This chunk would print out the messages for attaching the package.
+```{r}
+library(dplyr)
+```
+
+
+But this would not. in case of warnings for attacing package, you can use `warning=` option.
+
+(you can select other options from the option button the the right corner of the code chunk)
+```{r warning=FALSE}
+library(ggplot2)
+```
+
+
+
